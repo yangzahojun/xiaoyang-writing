@@ -1,0 +1,255 @@
+# -*- coding: utf-8 -*-
+"""
+小羊爱写作 🐑 — 教育学学术写作训练智能体
+运行方式：python -m streamlit run app.py
+"""
+
+import streamlit as st
+from prompts import WRITING_TYPES, STAGES, MODES, build_system_prompt, build_intro_message
+import llm
+
+# ============================================================
+# 页面设置
+# ============================================================
+st.set_page_config(
+    page_title="小羊爱写作",
+    page_icon="🐑",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# ============================================================
+# 温暖可爱风自定义样式
+# ============================================================
+def inject_css():
+    st.markdown(
+        """
+        <style>
+        /* ---------- 全局 ---------- */
+        :root {
+            --cream: #FFF8EE;
+            --cream-2: #FFFDF7;
+            --orange: #F59E6B;
+            --orange-soft: #FDE8D4;
+            --pink: #FF8FA8;
+            --pink-soft: #FFE3EA;
+            --brown: #4A3F35;
+            --brown-soft: #8A7A6A;
+            --card-border: #F3E3CF;
+        }
+
+        .stApp {
+            background: linear-gradient(180deg, var(--cream) 0%, var(--cream-2) 100%);
+        }
+
+        /* ---------- 侧边栏 ---------- */
+        [data-testid="stSidebar"] {
+            background: #FFFDF7;
+            border-right: 2px solid var(--card-border);
+        }
+        [data-testid="stSidebar"] > div {
+            padding-top: 1.2rem;
+        }
+
+        /* ---------- 主区标题卡片 ---------- */
+        .hero-card {
+            background: linear-gradient(135deg, #FFE9D6 0%, #FFE3EA 60%, #FFF2E6 100%);
+            border: 2px solid var(--card-border);
+            border-radius: 22px;
+            padding: 1.6rem 1.8rem;
+            margin-bottom: 0.6rem;
+            box-shadow: 0 6px 18px rgba(245, 158, 107, 0.12);
+        }
+        .hero-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--brown);
+            letter-spacing: 0.5px;
+            margin: 0;
+        }
+        .hero-sub {
+            color: var(--brown-soft);
+            font-size: 0.95rem;
+            margin-top: 0.35rem;
+        }
+        .hero-tag {
+            display: inline-block;
+            background: #FFFFFF;
+            border: 1.5px solid var(--card-border);
+            border-radius: 999px;
+            padding: 0.3rem 0.9rem;
+            margin: 0.55rem 0.4rem 0 0;
+            font-size: 0.85rem;
+            color: var(--brown);
+            font-weight: 600;
+        }
+
+        /* ---------- 聊天气泡 ---------- */
+        [data-testid="stChatMessage"] {
+            background: #FFFFFF;
+            border: 1.5px solid var(--card-border);
+            border-radius: 18px;
+            box-shadow: 0 2px 8px rgba(74, 63, 53, 0.05);
+            padding: 0.2rem 0.4rem;
+        }
+
+        /* ---------- 输入框 ---------- */
+        [data-testid="stChatInput"] {
+            border: 2px solid var(--card-border);
+            border-radius: 16px;
+        }
+        [data-testid="stChatInput"] textarea {
+            color: var(--brown);
+        }
+
+        /* ---------- 按钮 ---------- */
+        .stButton > button {
+            border-radius: 12px;
+            border: 1.5px solid var(--card-border);
+            background: #FFFFFF;
+            color: var(--brown);
+            font-weight: 600;
+            transition: all 0.15s ease;
+        }
+        .stButton > button:hover {
+            border-color: var(--orange);
+            background: var(--orange-soft);
+            color: var(--brown);
+        }
+
+        /* ---------- 侧边栏下拉框标签 ---------- */
+        [data-testid="stSidebar"] .stSelectbox label {
+            color: var(--brown);
+            font-weight: 600;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+inject_css()
+
+# ============================================================
+# 侧边栏：选择任务
+# ============================================================
+with st.sidebar:
+    st.markdown(
+        """
+        <div style="text-align:center; margin-bottom:0.4rem;">
+            <div style="font-size:3rem;">🐑</div>
+            <div style="font-size:1.3rem; font-weight:800; color:#4A3F35;">小羊爱写作</div>
+            <div style="font-size:0.85rem; color:#8A7A6A;">教育学本科生 · 教练式写作训练</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.divider()
+
+    writing_type = st.selectbox(
+        "① 写作类型",
+        list(WRITING_TYPES.keys()),
+        format_func=lambda k: WRITING_TYPES[k],
+    )
+    stage = st.selectbox(
+        "② 当前阶段",
+        list(STAGES.keys()),
+        format_func=lambda k: STAGES[k],
+    )
+    mode = st.selectbox(
+        "③ 模式",
+        list(MODES.keys()),
+        format_func=lambda k: MODES[k],
+    )
+
+    st.divider()
+
+    # 显示当前模型配置状态（不显示 Key 明文）
+    try:
+        cfg = llm.load_config()
+        provider = (cfg.get("provider") or "").strip()
+        api_key = (cfg.get("api_key") or "").strip()
+        model = (cfg.get("model") or "").strip()
+        if not api_key or "替换" in api_key or "api key" in api_key.lower():
+            st.warning("⚠️ 尚未配置 API Key")
+        else:
+            st.caption(f"✅ 当前模型：{provider} / {model or '默认'}")
+    except Exception as e:
+        st.warning(f"⚠️ 读取配置失败：{e}")
+
+    st.caption("💡 提示：切换类型/阶段/模式会开启新一轮训练")
+
+    if st.button("🗑 清空当前对话", use_container_width=True):
+        st.session_state.messages = []
+        st.session_state.current_key = ""
+        st.rerun()
+
+# ============================================================
+# 会话状态初始化
+# ============================================================
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "current_key" not in st.session_state:
+    st.session_state.current_key = ""
+
+# ============================================================
+# 检测任务切换，自动生成开场引导
+# ============================================================
+key = f"{writing_type}|{stage}|{mode}"
+if key != st.session_state.current_key:
+    st.session_state.messages = [
+        {
+            "role": "assistant",
+            "content": build_intro_message(writing_type, stage, mode),
+            "is_intro": True,
+        }
+    ]
+    st.session_state.current_key = key
+
+# ============================================================
+# 主区
+# ============================================================
+st.markdown(
+    f"""
+    <div class="hero-card">
+        <div class="hero-title">🐑 小羊爱写作</div>
+        <div class="hero-sub">陪你一步步，把论文写扎实。</div>
+        <div>
+            <span class="hero-tag">📚 {WRITING_TYPES[writing_type]}</span>
+            <span class="hero-tag">🎯 {STAGES[stage]}</span>
+            <span class="hero-tag">🧑‍🏫 {MODES[mode]}</span>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+# 显示历史消息
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+
+# ============================================================
+# 用户输入
+# ============================================================
+if user_input := st.chat_input("在这里写下你的想法、初稿或问题……"):
+    st.session_state.messages.append({"role": "user", "content": user_input})
+    with st.chat_message("user"):
+        st.markdown(user_input)
+
+    system_prompt = build_system_prompt(writing_type, stage, mode)
+    history = [
+        m for m in st.session_state.messages
+        if m["role"] in ("user", "assistant") and not m.get("is_intro")
+    ]
+
+    with st.chat_message("assistant"):
+        with st.spinner("小羊正在认真思考……"):
+            try:
+                reply = llm.chat(system_prompt, history)
+                st.markdown(reply)
+            except Exception as e:
+                reply = f"⚠️ 出错了：{e}"
+                st.error(reply)
+
+    st.session_state.messages.append({"role": "assistant", "content": reply})
