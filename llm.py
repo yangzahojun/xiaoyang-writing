@@ -83,13 +83,14 @@ def _resolve_config(config: dict):
     return provider, api_key, model, base_url
 
 
-def chat(system_prompt: str, history: list, temperature: float = 0.7) -> str:
+def chat(system_prompt: str, history: list, temperature: float = 0.7, max_history_messages: int = 12) -> str:
     """
     调用 AI 模型，返回文本回复。
 
     :param system_prompt: 系统提示词（教练的角色设定）
     :param history: 对话历史，格式 [{"role": "user"/"assistant", "content": "..."}]
     :param temperature: 随机性（0=更稳定，1=更发散）
+    :param max_history_messages: 发送给模型的最多历史消息条数（默认 12 条 ≈ 最近 6 轮问答）
     :return: 模型的文本回复
     """
     provider, api_key, model, base_url = _resolve_config(load_config())
@@ -102,6 +103,10 @@ def chat(system_prompt: str, history: list, temperature: float = 0.7) -> str:
     ]
     if not messages:
         raise ValueError("对话内容为空，无法调用模型。")
+
+    # 只保留最近 N 条消息，控制上下文长度、节省 token
+    if len(messages) > max_history_messages:
+        messages = messages[-max_history_messages:]
 
     if provider == "claude":
         return _chat_claude(api_key, model, system_prompt, messages, temperature)

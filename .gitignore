@@ -3,6 +3,9 @@ config.json
 .secrets.toml
 secrets.toml
 
+# 本地对话历史（含个人写作内容，不提交）
+history.json
+
 # Python
 __pycache__/
 *.py[cod]
