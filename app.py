@@ -42,6 +42,23 @@ def inject_css():
             background: linear-gradient(180deg, var(--cream) 0%, var(--cream-2) 100%);
         }
 
+        /* ---------- 统一字号：所有文字同一大小，强调仅用加粗 ---------- */
+        html, body, .stApp,
+        .stMarkdown, .stMarkdown p, .stMarkdown li, .stMarkdown span,
+        [data-testid="stChatMessage"] p,
+        [data-testid="stChatMessage"] li,
+        .hero-card, .hero-title, .hero-sub, .hero-tag {
+            font-size: 1rem !important;
+        }
+        .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
+        .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
+            font-size: 1rem !important;
+            font-weight: 700 !important;
+        }
+        [data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] * {
+            font-size: 1rem !important;
+        }
+
         /* ---------- 侧边栏 ---------- */
         [data-testid="stSidebar"] {
             background: #FFFDF7;
@@ -61,15 +78,13 @@ def inject_css():
             box-shadow: 0 6px 18px rgba(245, 158, 107, 0.12);
         }
         .hero-title {
-            font-size: 2rem;
-            font-weight: 800;
+            font-weight: 700;
             color: var(--brown);
             letter-spacing: 0.5px;
             margin: 0;
         }
         .hero-sub {
             color: var(--brown-soft);
-            font-size: 0.95rem;
             margin-top: 0.35rem;
         }
         .hero-tag {
@@ -79,7 +94,6 @@ def inject_css():
             border-radius: 999px;
             padding: 0.3rem 0.9rem;
             margin: 0.55rem 0.4rem 0 0;
-            font-size: 0.85rem;
             color: var(--brown);
             font-weight: 600;
         }
@@ -137,9 +151,9 @@ with st.sidebar:
     st.markdown(
         """
         <div style="text-align:center; margin-bottom:0.4rem;">
-            <div style="font-size:3rem;">🐑</div>
-            <div style="font-size:1.3rem; font-weight:800; color:#4A3F35;">小羊爱写作</div>
-            <div style="font-size:0.85rem; color:#8A7A6A;">教育学本科生 · 教练式写作训练</div>
+            <div>🐑</div>
+            <div style="font-weight:700; color:#4A3F35;">小羊爱写作</div>
+            <div style="color:#8A7A6A;">教育学本科生 · 教练式写作训练</div>
         </div>
         """,
         unsafe_allow_html=True,
